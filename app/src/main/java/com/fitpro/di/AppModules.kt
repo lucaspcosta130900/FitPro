@@ -38,7 +38,6 @@ object DatabaseModule {
     @Provides fun provideUserGoalDao(db: AppDatabase): UserGoalDao = db.userGoalDao()
     @Provides fun provideCardapioDao(db: AppDatabase): CardapioDao = db.cardapioDao()
     @Provides fun provideShoppingDao(db: AppDatabase): ShoppingDao = db.shoppingDao()
-    @Provides fun provideFoodItemDao(db: AppDatabase): FoodItemDao = db.foodItemDao()
 }
 
 @Module
