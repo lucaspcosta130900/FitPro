@@ -145,7 +145,7 @@ fun NutritionDto.toForm() = FoodForm(
     name = name, brand = brand,
     calories = calories, protein = protein,
     carbs = carbs, fat = fat,
-    fiber = fiber, servingSize = servingSizeG
+    fiber = fiber, servingSize = servingSizeG ?: 0f
 )
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
