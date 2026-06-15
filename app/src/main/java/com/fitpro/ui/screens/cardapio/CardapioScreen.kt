@@ -384,8 +384,10 @@ private fun CreateEditTemplateSheet(
     var name        by remember { mutableStateOf(existing?.template?.name ?: "") }
     var description by remember { mutableStateOf(existing?.template?.description ?: "") }
     var mealType    by remember { mutableStateOf(existing?.template?.mealType ?: initialType) }
-    var items       by remember {
-        mutableStateOf(existing?.itemsWithFood?.map { Pair(it.food, it.item.quantityG) } ?: emptyList())
+    var items by remember {
+        mutableStateOf<List<Pair<FoodItemEntity, Float>>>(
+            existing?.itemsWithFood?.map { Pair(it.food, it.item.quantityG) } ?: emptyList()
+        )
     }
     var foodSearch  by remember { mutableStateOf("") }
     var qtyInput    by remember { mutableStateOf("") }

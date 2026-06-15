@@ -771,15 +771,18 @@ private fun WeightHistorySheet(
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Text("${"%.1f".format(m.weightKg)} kg",
                                     fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                m.fatPercent?.let { Text("${"%.1f".format(it)}% gord.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                m.muscleMassKg?.let { Text("${"%.1f".format(it)} kg musc.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                m.waistCm?.let { Text("${"%.0f".format(it)} cm cin.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                if (m.bodyFatPercent != null)
+                                    Text("${"%.1f".format(m.bodyFatPercent)}% gord.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (m.muscleMassKg != null)
+                                    Text("${"%.1f".format(m.muscleMassKg)} kg musc.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                if (m.waistCm != null)
+                                    Text("${"%.0f".format(m.waistCm)} cm cin.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         IconButton(onClick = { onDelete(m) }, modifier = Modifier.size(32.dp)) {
