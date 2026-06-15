@@ -224,5 +224,34 @@ class AiRepository @Inject constructor(
         )
     }
 
+    suspend fun analyzeNutritionalLabel(
+        base64Image: String,
+        mediaType: String,   // "image/jpeg", "image/png", etc.
+        apiKey: String
+    ): com.fitpro.data.remote.NutritionDto {
+        val message = MultiMessage(
+            role = "user",
+            content = listOf(
+                com.fitpro.data.remote.ImageContent(
+                    source = com.fitpro.data.remote.ImageSource(
+                        mediaType = mediaType, data = base64Image)),
+                TextContent(text = FitProSystemPrompt.NUTRITION_LABEL_PROMPT)
+            )
+        )
+        val response = apiService.analyzeDocument(
+            apiKey  = apiKey,
+            request = DocAnalysisRequest(
+                system   = "Voce e um especialista em nutricao que extrai dados de tabelas nutricionais com precisao.",
+                messages = listOf(message)
+            )
+        )
+        val raw = response.content?.firstOrNull { it.type == "text" }?.text
+            ?: throw Exception("Resposta vazia da API")
+        val clean = raw.trim()
+            .removePrefix("```json").removePrefix("```")
+            .removeSuffix("```").trim()
+        return com.google.gson.Gson().fromJson(clean, com.fitpro.data.remote.NutritionDto::class.java)
+    }
+
     suspend fun clearHistory() = chatDao.clearAll()
 }

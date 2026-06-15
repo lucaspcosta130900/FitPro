@@ -99,6 +99,32 @@ class AnthropicHeaderInterceptor : okhttp3.Interceptor {
     }
 }
 
+// ─── Image content block ─────────────────────────────────────────────────────
+
+data class ImageSource(
+    val type: String = "base64",
+    @SerializedName("media_type") val mediaType: String,
+    val data: String
+)
+
+data class ImageContent(
+    val type: String = "image",
+    val source: ImageSource
+)
+
+// ─── Nutritional label result ─────────────────────────────────────────────────
+
+data class NutritionDto(
+    val name: String = "",
+    val brand: String = "",
+    val calories: Float = 0f,
+    val protein: Float = 0f,
+    val carbs: Float = 0f,
+    val fat: Float = 0f,
+    val fiber: Float = 0f,
+    @SerializedName("serving_size_g") val servingSizeG: Float? = null
+)
+
 // ─── Exam result model (parsed from Claude JSON response) ────────────────────
 
 data class ExamResultDto(
@@ -143,6 +169,20 @@ object FitProSystemPrompt {
         appendLine("- Use os dados acima para personalizar as respostas")
         appendLine("- Foque em nutricao, treino, interpretacao de exames e motivacao")
     }
+
+const val NUTRITION_LABEL_PROMPT = """Analise a tabela nutricional nesta imagem e extraia os macronutrientes por 100g (converta se necessario).
+Retorne APENAS um JSON puro, sem texto adicional, backticks ou explicacoes:
+{
+  "name": "nome do produto se visivel",
+  "brand": "marca se visivel",
+  "calories": 0.0,
+  "protein": 0.0,
+  "carbs": 0.0,
+  "fat": 0.0,
+  "fiber": 0.0,
+  "serving_size_g": null
+}
+Todos os valores DEVEM ser por 100g. Se a tabela mostrar por porcao, calcule para 100g. Fibra retorne 0 se nao informada."""
 
     const val PDF_EXAM_PROMPT = """Analise o PDF de resultado de exame laboratorial e extraia TODOS os resultados encontrados.
 

@@ -24,6 +24,9 @@ interface FoodItemDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertFoods(foods: List<FoodItemEntity>)
 
+    @Update
+    suspend fun updateFood(food: FoodItemEntity)
+
     @Delete
     suspend fun deleteFood(food: FoodItemEntity)
 

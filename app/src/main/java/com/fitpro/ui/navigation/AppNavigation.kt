@@ -21,6 +21,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.fitpro.ui.screens.ai.AiChatScreen
+import com.fitpro.ui.screens.alimentos.AlimentosScreen
 import com.fitpro.ui.screens.cardapio.CardapioScreen
 import com.fitpro.ui.screens.dashboard.DashboardScreen
 import com.fitpro.ui.screens.diary.DiaryScreen
@@ -35,6 +36,7 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector)
     object Training  : Screen("training",  "Treinos",  Icons.Outlined.FitnessCenter)
     object Mercado   : Screen("mercado",   "Mercado",  Icons.Outlined.ShoppingCart)
     object Profile   : Screen("profile",   "Perfil",   Icons.Outlined.Person)
+    object Alimentos : Screen("alimentos", "Alimentos", Icons.Outlined.SetMeal)
     object AiChat    : Screen("ai_chat",   "IA",       Icons.Outlined.AutoAwesome)
 }
 
@@ -44,6 +46,7 @@ private val TOP_LEVEL = listOf(
     Screen.Cardapio,
     Screen.Training,
     Screen.Mercado,
+    Screen.Alimentos,
     Screen.Profile,
 )
 
@@ -95,6 +98,7 @@ fun AppNavigation() {
                         onNavigateToAi = { navController.navigateTo(Screen.AiChat.route) }
                     )
                 }
+                composable(Screen.Alimentos.route) { AlimentosScreen() }
                 composable(Screen.AiChat.route)    { AiChatScreen() }
             }
         }
