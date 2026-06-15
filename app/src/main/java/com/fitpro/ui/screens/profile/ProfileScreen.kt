@@ -29,6 +29,9 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.clickable
+import com.fitpro.ui.theme.StatusAltered
+import com.fitpro.ui.theme.StatusNormal
 import java.util.Locale
 import javax.inject.Inject
 
@@ -92,6 +95,8 @@ class ProfileViewModel @Inject constructor(
 
     val examDates: StateFlow<List<LocalDate>> = healthRepo.getExamDates()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allExams: StateFlow<List<LabExamEntity>> = healthRepo.getAllExams()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val alteredExams: StateFlow<List<LabExamEntity>> = healthRepo.getAlteredExams()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -138,6 +143,9 @@ fun ProfileScreen(
 ) {
     val metrics      by vm.metrics.collectAsStateWithLifecycle()
     val examDates    by vm.examDates.collectAsStateWithLifecycle()
+    val allExams     by vm.allExams.collectAsStateWithLifecycle()
+    var selectedExamDate by remember { mutableStateOf<LocalDate?>(null) }
+    var showWeightHistory by remember { mutableStateOf(false) }
     val alteredExams by vm.alteredExams.collectAsStateWithLifecycle()
     val prefs        by vm.prefs.collectAsStateWithLifecycle()
 
@@ -209,9 +217,15 @@ fun ProfileScreen(
             SectionCard(
                 title  = "Histórico de Peso",
                 action = {
-                    IconButton(onClick = { showWeightSheet = true }) {
-                        Icon(Icons.Outlined.Add, "Adicionar peso", Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.primary)
+                    Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                        IconButton(onClick = { showWeightHistory = true }, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Outlined.History, "Histórico", Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.secondary)
+                        }
+                        IconButton(onClick = { showWeightSheet = true }, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Outlined.Add, "Adicionar peso", Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             ) {
@@ -322,16 +336,26 @@ fun ProfileScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
-                    examDates.take(5).forEach { date ->
-                        Row(Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(
-                                date.format(DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", Locale("pt","BR"))),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Icon(Icons.Outlined.Science, null, Modifier.size(16.dp),
+                    examDates.take(8).forEach { date ->
+                        val examsOnDate = allExams.filter { it.date == date }
+                        val altCount = examsOnDate.count { it.status != ExamStatus.NORMAL }
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                                .clickable { selectedExamDate = date },
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(date.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale("pt","BR"))),
+                                    style = MaterialTheme.typography.bodyMedium)
+                                Text("${examsOnDate.size} exames${if (altCount > 0) " · $altCount alterado(s)" else " · todos normais"}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (altCount > 0) StatusAltered else StatusNormal)
+                            }
+                            Icon(Icons.Outlined.ChevronRight, null, Modifier.size(18.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                        HorizontalDivider(Modifier.padding(vertical = 2.dp))
                     }
                 }
             }
@@ -380,6 +404,24 @@ fun ProfileScreen(
                 .padding(16.dp),
             contentAlignment = androidx.compose.ui.Alignment.Center
         ) {  }  // handled via Snackbar approach below
+    }
+
+    // Exam detail sheet
+    selectedExamDate?.let { date ->
+        ExamDetailSheet(
+            date   = date,
+            exams  = allExams.filter { it.date == date },
+            onDismiss = { selectedExamDate = null }
+        )
+    }
+
+    // Weight history sheet
+    if (showWeightHistory) {
+        WeightHistorySheet(
+            metrics   = metrics,
+            onDelete  = { vm.deleteMetric(it) },
+            onDismiss = { showWeightHistory = false }
+        )
     }
 
     if (showApiKeySheet) {
@@ -608,6 +650,145 @@ private fun AddExamSheet(
                 },
                 modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)
             ) { Text("Salvar resultado") }
+        }
+    }
+}
+
+// ─── Exam Detail Bottom Sheet ─────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExamDetailSheet(
+    date: java.time.LocalDate,
+    exams: List<com.fitpro.data.local.entity.LabExamEntity>,
+    onDismiss: () -> Unit
+) {
+    val grouped = exams.groupBy { it.examGroup }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ) {
+        androidx.compose.foundation.lazy.LazyColumn(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            item {
+                Text(
+                    date.format(java.time.format.DateTimeFormatter.ofPattern(
+                        "d 'de' MMMM 'de' yyyy", java.util.Locale("pt","BR"))),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text("${exams.size} exames · ${exams.count { it.status != ExamStatus.NORMAL }} fora do intervalo",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(12.dp))
+            }
+            grouped.entries.sortedBy { it.key }.forEach { (group, groupExams) ->
+                item {
+                    Text(group.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.8.sp, color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+                }
+                items(groupExams.sortedBy { it.examName }) { exam ->
+                    val statusColor = when (exam.status) {
+                        ExamStatus.ALTERED    -> StatusAltered
+                        ExamStatus.BORDERLINE -> StatusBorder
+                        ExamStatus.NORMAL     -> StatusNormal
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = statusColor.copy(alpha = if (exam.status == ExamStatus.NORMAL) 0.04f else 0.08f),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+                    ) {
+                        Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(exam.examName, style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium)
+                                Text(exam.referenceText, style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("${"%.1f".format(exam.value)} ${exam.unit}",
+                                    fontWeight = FontWeight.Bold, fontSize = 14.sp, color = statusColor)
+                                Surface(shape = RoundedCornerShape(4.dp),
+                                    color = statusColor.copy(0.15f)) {
+                                    Text(when (exam.status) {
+                                            ExamStatus.NORMAL     -> "Normal"
+                                            ExamStatus.BORDERLINE -> "Limítrofe"
+                                            ExamStatus.ALTERED    -> "Alterado"
+                                        },
+                                        fontSize = 9.sp, color = statusColor,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─── Weight History Sheet ─────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WeightHistorySheet(
+    metrics: List<com.fitpro.data.local.entity.BodyMetricEntity>,
+    onDelete: (com.fitpro.data.local.entity.BodyMetricEntity) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ) {
+        androidx.compose.foundation.lazy.LazyColumn(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            item {
+                Text("Histórico Completo", style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold)
+                Text("${metrics.size} registros", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(12.dp))
+            }
+            items(metrics.sortedByDescending { it.date }) { m ->
+                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
+                    elevation = CardDefaults.cardElevation(1.dp)) {
+                    Row(Modifier.padding(12.dp).fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(m.date.format(java.time.format.DateTimeFormatter.ofPattern(
+                                "d MMM yyyy", java.util.Locale("pt","BR"))),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text("${"%.1f".format(m.weightKg)} kg",
+                                    fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                m.fatPercent?.let { Text("${"%.1f".format(it)}% gord.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                m.muscleMassKg?.let { Text("${"%.1f".format(it)} kg musc.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                m.waistCm?.let { Text("${"%.0f".format(it)} cm cin.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            }
+                        }
+                        IconButton(onClick = { onDelete(m) }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Outlined.DeleteOutline, "Excluir", Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.4f))
+                        }
+                    }
+                }
+            }
         }
     }
 }

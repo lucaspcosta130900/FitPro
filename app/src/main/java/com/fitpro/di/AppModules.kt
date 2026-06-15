@@ -6,6 +6,7 @@ import com.fitpro.data.local.AppDatabase
 import com.fitpro.data.local.dao.*
 import com.fitpro.data.local.dao.CardapioDao
 import com.fitpro.data.local.dao.ShoppingDao
+import com.fitpro.data.local.dao.FoodItemDao
 import com.fitpro.data.remote.AnthropicApiService
 import dagger.Module
 import dagger.Provides
@@ -37,6 +38,7 @@ object DatabaseModule {
     @Provides fun provideUserGoalDao(db: AppDatabase): UserGoalDao = db.userGoalDao()
     @Provides fun provideCardapioDao(db: AppDatabase): CardapioDao = db.cardapioDao()
     @Provides fun provideShoppingDao(db: AppDatabase): ShoppingDao = db.shoppingDao()
+    @Provides fun provideFoodItemDao(db: AppDatabase): FoodItemDao = db.foodItemDao()
 }
 
 @Module
