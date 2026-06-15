@@ -50,8 +50,8 @@ class AlimentosViewModel @Inject constructor(
     private val prefsRepo: com.fitpro.data.preferences.UserPreferencesRepository
 ) : ViewModel() {
 
-    val apiKey: StateFlow<String> = prefsRepo.userPreferences
-        .map { it?.anthropicApiKey ?: "" }
+    val apiKey: StateFlow<String> = prefsRepo.preferences
+        .map { it.anthropicApiKey }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
 
@@ -87,7 +87,7 @@ class AlimentosViewModel @Inject constructor(
                 carbsPer100g    = form.carbs,
                 fatPer100g      = form.fat,
                 fiberPer100g    = form.fiber,
-                servingSizeG    = form.servingSize.takeIf { it > 0f },
+                servingSizeG    = form.servingSize,
                 isCustom        = true
             )
             if (existing != null) foodDao.updateFood(entity) else foodDao.insertFood(entity)
@@ -138,14 +138,14 @@ fun FoodItemEntity.toForm() = FoodForm(
     name = name, brand = brand,
     calories = caloriesPer100g, protein = proteinPer100g,
     carbs = carbsPer100g, fat = fatPer100g,
-    fiber = fiberPer100g, servingSize = servingSizeG ?: 0f
+    fiber = fiberPer100g, servingSize = servingSizeG
 )
 
 fun NutritionDto.toForm() = FoodForm(
     name = name, brand = brand,
     calories = calories, protein = protein,
     carbs = carbs, fat = fat,
-    fiber = fiber, servingSize = servingSizeG ?: 0f
+    fiber = fiber, servingSize = servingSizeG
 )
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -261,7 +261,7 @@ fun AlimentosScreen(vm: AlimentosViewModel = hiltViewModel()) {
                 }
             } else {
                 LazyColumn(contentPadding = PaddingValues(
-                    horizontal = 12.dp, bottom = 100.dp, top = 4.dp),
+                    start = 12.dp, end = 12.dp, top = 4.dp, bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(foods, key = { it.id }) { food ->
                         FoodCard(
