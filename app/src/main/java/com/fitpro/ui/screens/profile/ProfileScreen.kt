@@ -470,20 +470,51 @@ private fun WeightRow(metric: BodyMetricEntity, onDelete: () -> Unit) {
 @Composable
 private fun ExamRow(exam: LabExamEntity) {
     val statusColor = when (exam.status) {
-        ExamStatus.NORMAL    -> StatusNormal
-        ExamStatus.BORDERLINE-> StatusBorder
-        ExamStatus.ALTERED   -> StatusAltered
+        ExamStatus.NORMAL     -> StatusNormal
+        ExamStatus.BORDERLINE -> StatusBorder
+        ExamStatus.ALTERED    -> StatusAltered
     }
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(exam.examName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-            Text(exam.examGroup, style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+    // Compact layout: name + value on one line, ref below — works on any screen width
+    Column(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                exam.examName,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).padding(end = 8.dp)
+            )
+            Text(
+                "${"%.1f".format(exam.value)} ${exam.unit}",
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                color = statusColor
+            )
         }
-        Column(horizontalAlignment = Alignment.End) {
-            Text("%.1f ${exam.unit}".format(exam.value), fontWeight = FontWeight.Medium, color = statusColor)
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                exam.examGroup,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             if (exam.referenceText.isNotBlank()) {
-                Text(exam.referenceText, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "ref: ${exam.referenceText}",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false).padding(start = 8.dp)
+                )
             }
         }
     }

@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -65,7 +66,7 @@ fun AppNavigation() {
             TOP_LEVEL.forEach { screen ->
                 item(
                     icon     = { Icon(screen.icon, contentDescription = screen.label) },
-                    label    = { Text(screen.label) },
+                    label    = { Text(screen.label, fontSize = 10.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis) },
                     selected = currentDest?.hierarchy?.any { it.route == screen.route } == true,
                     onClick  = { navController.navigateTo(screen.route) }
                 )
