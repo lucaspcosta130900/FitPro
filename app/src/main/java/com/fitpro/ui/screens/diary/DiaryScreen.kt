@@ -21,7 +21,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.Flow
 import androidx.compose.runtime.collectAsState
 import com.fitpro.data.local.dao.MealEntryWithFood
-import com.fitpro.data.local.dao.FullMealTemplate
 import com.fitpro.data.local.dao.CardapioDao
 import com.fitpro.data.local.entity.*
 import com.fitpro.data.repository.FoodRepository

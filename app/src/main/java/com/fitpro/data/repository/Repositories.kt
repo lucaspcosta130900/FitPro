@@ -7,6 +7,7 @@ import com.fitpro.data.remote.ChatMessage
 import com.fitpro.data.remote.ChatRequest
 import com.fitpro.data.remote.DocumentContent
 import com.fitpro.data.remote.DocumentSource
+import com.fitpro.data.remote.TextContent
 import com.fitpro.data.remote.MultiMessage
 import com.fitpro.data.remote.DocAnalysisRequest
 import com.fitpro.data.remote.FitProSystemPrompt
