@@ -190,11 +190,38 @@ class AiRepository @Inject constructor(
         val raw = response.content?.firstOrNull { it.type == "text" }?.text
             ?: throw Exception("Resposta vazia da API")
 
-        val clean = raw.trim().removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
-        return com.google.gson.Gson().fromJson(
-            clean,
-            Array<com.fitpro.data.remote.ExamResultDto>::class.java
-        ).toList()
+        val clean = raw.trim()
+            .removePrefix("```json").removePrefix("```")
+            .removeSuffix("```").trim()
+
+        return parseExamJson(clean)
+    }
+
+    private fun parseExamJson(json: String): List<com.fitpro.data.remote.ExamResultDto> {
+        val gson = com.google.gson.Gson()
+        val type = Array<com.fitpro.data.remote.ExamResultDto>::class.java
+
+        // 1. Try full parse first
+        try { return gson.fromJson(json, type).toList() } catch (_: Exception) {}
+
+        // 2. Truncated response — recover complete items before the cut
+        val lastBrace = json.lastIndexOf('}')
+        if (lastBrace > 0) {
+            val partial = json.substring(0, lastBrace + 1)
+                .trimEnd().trimEnd(',')
+            val fixed = (if (partial.trimStart().startsWith("[")) partial else "[$partial") + "]"
+            try {
+                val results = gson.fromJson(fixed, type).toList()
+                android.util.Log.w("FitPro",
+                    "PDF truncado — recuperados ${results.size} exames parciais")
+                return results
+            } catch (_: Exception) {}
+        }
+
+        throw Exception(
+            "Nao foi possivel interpretar a resposta (JSON invalido). " +
+            "Tente um PDF com menos paginas ou aguarde e tente novamente."
+        )
     }
 
     suspend fun clearHistory() = chatDao.clearAll()
